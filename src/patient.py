@@ -1,18 +1,46 @@
-"""
-TODO: Implement the Patient class.
-Please import and use the config and db config variables.
+from uuid import uuid4
+from datetime import datetime
+from config import config
+from db_config import db_config
 
-The attributes for this class should be the same as the columns in the PATIENTS_TABLE.
+class Patient:
+    def __init__(self, name, gender, age):
+        self.id = str(uuid4())
+        self.name = name
+        self.gender = gender
+        self.age = age
+        self.checkin = datetime.now().strftime(config['date_time_format'])
+        self.checkout = None
+        self.ward = None
+        self.room = None
 
-The Object Arguments should only be name , gender and age.
-Rest of the attributes should be set within the class.
+    def update_room_and_ward(self, ward, room):
+        if ward not in db_config['wards']:
+            raise ValueError("Invalid ward")
 
--> for id use uuid4 to generate a unique id for each patient.
--> for checkin and checkout use the current date and time.
+        if room not in db_config['rooms_per_ward']:
+            raise ValueError("Invalid room")
 
-There should be a method to update the patient's room and ward. validation should be used.(config is given)
+        self.ward = ward
+        self.room = room
 
-Validation should be done for all of the variables in config and db_config.
+    def commit_to_database(self, api_controller):
+        patient_data = {
+            'patient_id': self.id,
+            'patient_name': self.name,
+            'patient_age': self.age,
+            'patient_gender': self.gender,
+            'patient_checkin': self.checkin,
+            'patient_checkout': self.checkout,
+            'patient_ward': self.ward,
+            'patient_room': self.room
+        }
 
-There should be a method to commit that patient to the database using the api_controller.
-"""
+        response, status_code = api_controller.create_patient(patient_data)
+        if status_code == 200:
+            print("Patient successfully committed to the database.")
+        else:
+            print("Failed to commit patient to the database:", response)
+
+
+
